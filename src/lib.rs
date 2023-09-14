@@ -282,10 +282,9 @@ pub fn optimize_x_axis(
     p: usize,
     x: usize,
     score: &mut [f64],
-) -> Vec<f64> {
+) {
     if p == 1 {
         score.iter_mut().take(x - 1).for_each(|i| *i = 0.0);
-        return score.to_vec();
     }
 
     let c = compute_c(p_map, p, n).unwrap();
@@ -333,8 +332,6 @@ pub fn optimize_x_axis(
         let min_log = log_i.min(log_q);
         score[i - 2] = i_matrix[[p, i]] / min_log;
     }
-
-    score.to_vec()
 }
 
 #[derive(Debug, Clone)]
@@ -390,18 +387,14 @@ pub struct MineScore {
 }
 
 pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<MineScore> {
+    let mut score = prob.score.clone();
+    let q_map = Array1::zeros(prob.n);
     let mut xx = Array1::zeros(prob.n);
     let mut yy = Array1::zeros(prob.n);
     let mut xy = Array1::zeros(prob.n);
     let mut yx = Array1::zeros(prob.n);
     let ix = argsort(&prob.x);
     let iy = argsort(&prob.y);
-    let q_map = Array1::<i32>::zeros(prob.n);
-
-    // let q_map_temp = Arc::new(Mutex::new(q_map_temp));
-    // let score = Arc::new(Mutex::new(prob.score.clone()));
-
-    let mut score = prob.score.clone();
     for i in 0..prob.n {
         xx[i] = prob.x[ix[i]];
         yy[i] = prob.y[iy[i]];
@@ -422,7 +415,7 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
 
         let (p_map, p) = get_superclumps_partition(&xx, k, &q_map).unwrap();
 
-        let _ = optimize_x_axis(
+        optimize_x_axis(
             prob.n,
             &q_map,
             q,
@@ -446,7 +439,7 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
 
         let (p_map, p) = get_superclumps_partition(&yy, k, &q_map).unwrap();
 
-        let _ = optimize_x_axis(
+        optimize_x_axis(
             prob.n,
             &q_map,
             q,
