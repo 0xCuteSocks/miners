@@ -19,7 +19,7 @@ To use miners in your Rust project, add it as a dependency in your Cargo.toml fi
 
 ```toml
 [dependencies]
-miners = "0.1.0"
+miners = { git = "https://github.com/0xCuteSocks/miners.git" }
 ```
 
 ## Usage
