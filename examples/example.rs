@@ -35,9 +35,9 @@ fn main() {
 
     println!("time cost: {:?}", now.elapsed());
     // Access the computed score's attributes if needed
-    println!("Computed Score (n): {}", computed_score.n);
-    println!("Computed Score (m): {:?}", computed_score.m);
-    println!("Computed Score (M): {:?}", computed_score.mat);
+    // println!("Computed Score (n): {}", computed_score.n);
+    // println!("Computed Score (m): {:?}", computed_score.m);
+    // println!("Computed Score (M): {:?}", computed_score.mat);
     println!("With noise:\n");
     print_stats(&computed_score);
 }

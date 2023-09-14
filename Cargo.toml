@@ -1,6 +1,6 @@
 [package]
 name = "miners"
-version = "0.1.0"
+version = "0.1.1"
 edition = "2021"
 authors = ["0xCuteSocks"]
 description = "miners is a Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family)"
@@ -11,4 +11,5 @@ description = "miners is a Rust library for the Maximal Information-based Nonpar
 ndarray = { version = "0.15", features = ["rayon", "blas"] }
 blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
-rand = "0.8.5"
+rand = "0.8"
+rayon = "1.7"

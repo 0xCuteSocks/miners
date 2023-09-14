@@ -1,9 +1,9 @@
 use ndarray::{parallel::prelude::*, Array1, Array2};
-use std::sync::{Arc, Mutex};
+use rayon::prelude::*;
 
-pub fn argsort<T: PartialOrd>(data: &[T]) -> Vec<usize> {
+pub fn argsort(data: &[f64]) -> Vec<usize> {
     let mut indices = (0..data.len()).collect::<Vec<_>>();
-    indices.sort_by(|&i1, &i2| data[i1].partial_cmp(&data[i2]).unwrap());
+    indices.par_sort_by(|&i1, &i2| data[i1].partial_cmp(&data[i2]).unwrap());
     indices
 }
 
@@ -394,14 +394,14 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
     let mut yy = Array1::zeros(prob.n);
     let mut xy = Array1::zeros(prob.n);
     let mut yx = Array1::zeros(prob.n);
-    let ix = argsort(&prob.x.clone());
-    let iy = argsort(&prob.y.clone());
+    let ix = argsort(&prob.x);
+    let iy = argsort(&prob.y);
     let q_map = Array1::<i32>::zeros(prob.n);
-    let q_map_temp = Array1::zeros(prob.n);
 
-    let score_n = prob.score.n;
-    let q_map_temp = Arc::new(Mutex::new(q_map_temp));
-    let score = Arc::new(Mutex::new(prob.score.clone()));
+    // let q_map_temp = Arc::new(Mutex::new(q_map_temp));
+    // let score = Arc::new(Mutex::new(prob.score.clone()));
+
+    let mut score = prob.score.clone();
     for i in 0..prob.n {
         xx[i] = prob.x[ix[i]];
         yy[i] = prob.y[iy[i]];
@@ -410,75 +410,54 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
     }
 
     // /* x vs. y */
-    (0..score_n).into_par_iter().for_each(|i| {
-        let mut q_map_temp = q_map_temp.lock().unwrap();
-        let mut score = score.lock().unwrap();
+    score.mat.par_iter_mut().enumerate().for_each(|(i, row)| {
         let k = usize::max((param.c * (score.m[i] as f64 + 1.0)) as usize, 1);
 
         let (mut q_map, q) = equipartition_y_axis(&yy, i + 2, &q_map);
 
         // Sort Q by x
-
         for j in 0..prob.n {
-            q_map_temp[iy[j]] = q_map[j];
-        }
-        for j in 0..prob.n {
-            q_map[j] = q_map_temp[ix[j]];
+            q_map[ix[j]] = q_map[j];
         }
 
         let (p_map, p) = get_superclumps_partition(&xx, k, &q_map).unwrap();
 
-        let _score = optimize_x_axis(
+        let _ = optimize_x_axis(
             prob.n,
             &q_map,
             q,
             &p_map,
             p,
             usize::min(i + 2, score.m[i] + 1),
-            &mut score.mat[i],
+            row,
         );
     });
 
     /* y vs. x */
-    (0..score_n).into_par_iter().for_each(|i| {
-        let mut score = score.lock().unwrap();
-        let mut q_map_temp = q_map_temp.lock().unwrap();
+    score.mat.par_iter_mut().enumerate().for_each(|(i, row)| {
         let k = usize::max((param.c * (score.m[i] as f64 + 1.0)) as usize, 1);
 
         let (mut q_map, q) = equipartition_y_axis(&xx, i + 2, &q_map);
 
         // Sort Q by x
         for j in 0..prob.n {
-            q_map_temp[ix[j]] = q_map[j];
-        }
-        for j in 0..prob.n {
-            q_map[j] = q_map_temp[iy[j]];
+            q_map[iy[j]] = q_map[j];
         }
 
         let (p_map, p) = get_superclumps_partition(&yy, k, &q_map).unwrap();
 
-        let matrix_temp = optimize_x_axis(
+        let _ = optimize_x_axis(
             prob.n,
             &q_map,
             q,
             &p_map,
             p,
             usize::min(i + 2, score.m[i] + 1),
-            &mut score.mat[i],
+            row,
         );
-
-        for (j, item) in matrix_temp
-            .iter()
-            .enumerate()
-            .take(usize::min(i + 1, score.m[i]))
-        {
-            score.mat[j][i] = *item;
-        }
     });
 
-    let res = Arc::try_unwrap(score).unwrap().into_inner().unwrap();
-
-    Some(res)
+    Some(score)
 }
 
 pub fn mine_mic(score: &MineScore) -> f64 {
