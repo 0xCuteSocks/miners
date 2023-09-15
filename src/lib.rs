@@ -574,11 +574,6 @@ pub fn mine_tic(score: &MineScore, norm: bool) -> f64 {
 
 #[pyfunction]
 pub fn mine_gmic(score: &MineScore, p: f64) -> f64 {
-    // let mut c_star = score.clone();
-    // let mut score_sub = score.clone();
-
-    // c_star.mat.par_iter_mut().for_each(|x| *x = vec![0.0; c_star.n]);
-    // score_sub.m.par_iter_mut().for_each(|x| *x = 0);
     // prepare score_sub
     let mut score_sub = MineScore {
         mat: score.mat.clone(),
@@ -606,8 +601,6 @@ pub fn mine_gmic(score: &MineScore, p: f64) -> f64 {
     }
 
     let mut z = 0;
-    
-
     if p == 0.0 {
         let mut gmic_temp = 1.0;
         for i in 0..c_star.n as usize {
