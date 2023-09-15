@@ -14,7 +14,7 @@ fn print_stats(score: &MineScore) {
 }
 
 fn main() {
-    let x = (0..200000).map(|i| i as f64).collect::<Vec<f64>>();
+    let x = (0..100000).map(|i| i as f64).collect::<Vec<f64>>();
     let mut y = x
         .iter()
         .map(|&x| (10.0 * PI * x).sin() + x)

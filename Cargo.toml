@@ -20,3 +20,8 @@ pyo3 = { version = "0.19", features = ["extension-module"] }
 [lib]
 name = "miners"
 crate-type = ["cdylib", "rlib"]
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1

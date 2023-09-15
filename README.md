@@ -1,6 +1,6 @@
 # miners
 
-miners is a fast Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family). miners using rayon and vectorization to speed up the calculation of MIC, it is 10x faster than the original minepy implementation.
+miners is a fast Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family). miners using rayon and vectorization to speed up the calculation of MIC, it is 15x faster than the original minepy implementation.
 
 ![bench](./bench.png)
 Yep, RapidMIC has a problem dealing with noisy high amounts of data
@@ -11,7 +11,7 @@ Yep, RapidMIC has a problem dealing with noisy high amounts of data
 - Total Information Coefficient (TIC, DOI: arXiv:1505.02213) and the Generalized Mean Information Coefficient (GMIC, DOI: arXiv:1308.5712);
 - A Rust library
 - an efficient Python API
-- 10x faster than minepy
+- 15x faster than minepy
 
 ## Installation
 
