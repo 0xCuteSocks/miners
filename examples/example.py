@@ -9,7 +9,7 @@ def print_stats(score):
     print("MEV", miners.mine_mev(score))
     print("MCN (eps=0)", miners.mine_mcn(score, 0.0))
     print("MCN (eps=1-MIC)", miners.mine_mcn_general(score))
-    print("TIC", miners.mine_gmic(score, -1.0))
+    print("GMIC", miners.mine_gmic(score, -1.0))
     print("TIC", miners.mine_tic(score, False))
 
 

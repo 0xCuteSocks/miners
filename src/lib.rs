@@ -183,11 +183,11 @@ pub fn get_superclumps_partition(
     Some((p_map, p))
 }
 
-pub fn compute_c(p_map: &Array1<i32>, p: usize, n: usize) -> Option<Array1<usize>> {
+pub fn compute_c(p_map: &Array1<i32>, p: usize) -> Option<Array1<usize>> {
     let mut c = Array1::zeros(p);
 
-    for i in 0..n {
-        c[p_map[i] as usize] += 1;
+    for &i in p_map.iter() {
+        c[i as usize] += 1;
     }
 
     for i in 1..p {
@@ -197,15 +197,8 @@ pub fn compute_c(p_map: &Array1<i32>, p: usize, n: usize) -> Option<Array1<usize
     Some(c)
 }
 
-pub fn compute_c_log(c: &Array1<usize>, p: usize) -> Option<Array1<f64>> {
-    let mut c_log = Array1::zeros(p);
-
-    for i in 0..p {
-        if c[i] != 0 {
-            c_log[i] = (c[i] as f64).ln();
-        }
-    }
-
+pub fn compute_c_log(c: &Array1<usize>) -> Option<Array1<f64>> {
+    let c_log = c.mapv(|x| if x != 0 { (x as f64).ln() } else { 0.0 });
     Some(c_log)
 }
 
@@ -214,7 +207,6 @@ pub fn compute_cumhist(
     q: usize,
     p_map: &Array1<i32>,
     p: usize,
-    n: usize,
 ) -> Option<Array2<i32>> {
     let mut cumhist = Array2::zeros((q, p));
 
@@ -224,11 +216,9 @@ pub fn compute_cumhist(
         return None; // Invalid index
     }
 
-    (0..n).for_each(|i| {
-        let q_index = q_map[i] as usize;
-        let p_index = p_map[i] as usize;
-        cumhist[[q_index, p_index]] += 1;
-    });
+    for (&q_index, &p_index) in q_map.iter().zip(p_map.iter()) {
+        cumhist[[q_index as usize, p_index as usize]] += 1;
+    }
 
     (0..q).for_each(|q_index| {
         (1..p).for_each(|p_index| {
@@ -288,9 +278,9 @@ pub fn optimize_x_axis(
         score.iter_mut().take(x - 1).for_each(|i| *i = 0.0);
     }
 
-    let c = compute_c(p_map, p, n).unwrap();
-    let c_log = compute_c_log(&c, p).unwrap();
-    let cumhist = compute_cumhist(q_map, q, p_map, p, n).unwrap();
+    let c = compute_c(p_map, p).unwrap();
+    let c_log = compute_c_log(&c).unwrap();
+    let cumhist = compute_cumhist(q_map, q, p_map, p).unwrap();
     let cumhist_log = compute_cumhist_log(&cumhist, q, p).unwrap();
     let hp2q = compute_hp2q(&cumhist, &c, q, p).unwrap();
     let mut i_matrix = init_i(p, x).unwrap();
@@ -472,101 +462,103 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
 
 #[pyfunction]
 pub fn mine_mic(score: &MineScore) -> f64 {
-    let mut score_max = 0.0;
-
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            if score.mat[i][j] > score_max {
-                score_max = score.mat[i][j];
+    score.mat.iter().flatten().fold(
+        0.0,
+        |score_max, &val| {
+            if val > score_max {
+                val
+            } else {
+                score_max
             }
-        }
-    }
-
-    score_max
+        },
+    )
 }
 
 #[pyfunction]
 pub fn mine_mas(score: &MineScore) -> f64 {
-    let mut score_max = 0.0;
-
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            let score_curr = (score.mat[i][j] - score.mat[j][i]).abs();
-            if score_curr > score_max {
-                score_max = score_curr;
-            }
-        }
-    }
-
-    score_max
+    score
+        .mat
+        .iter()
+        .enumerate()
+        .flat_map(|(i, row)| {
+            row.iter()
+                .enumerate()
+                .map(move |(j, &val)| (val - score.mat[j][i]).abs())
+        })
+        .fold(0.0, f64::max)
 }
 
 #[pyfunction]
 pub fn mine_mev(score: &MineScore) -> f64 {
-    let mut score_max = 0.0;
-
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            if (j == 0 || i == 0) && score.mat[i][j] > score_max {
-                score_max = score.mat[i][j];
-            }
-        }
-    }
-
-    score_max
+    score
+        .mat
+        .iter()
+        .enumerate()
+        .flat_map(|(i, row)| {
+            row.iter().enumerate().filter_map(
+                move |(j, &val)| {
+                    if j == 0 || i == 0 {
+                        Some(val)
+                    } else {
+                        None
+                    }
+                },
+            )
+        })
+        .fold(0.0, f64::max)
 }
 
 #[pyfunction]
 pub fn mine_mcn(score: &MineScore, eps: f64) -> f64 {
-    let mut score_min = f64::MAX;
     let delta = 0.0001; // avoids overestimation of mcn
     let mic = mine_mic(score);
 
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            let log_xy = ((i as f64 + 2.0) * (j as f64 + 2.0)).ln() / 2.0_f64.ln();
-            if ((score.mat[i][j] + delta) >= ((1.0 - eps) * mic)) && (log_xy < score_min) {
-                score_min = log_xy;
-            }
-        }
-    }
-
-    score_min
+    score
+        .mat
+        .iter()
+        .enumerate()
+        .flat_map(|(i, row)| {
+            row.iter().enumerate().filter_map(move |(j, &val)| {
+                let log_xy = ((i as f64 + 2.0) * (j as f64 + 2.0)).ln() / 2.0_f64.ln();
+                if (val + delta) >= ((1.0 - eps) * mic) {
+                    Some(log_xy)
+                } else {
+                    None
+                }
+            })
+        })
+        .fold(f64::MAX, f64::min)
 }
 
 #[pyfunction]
 pub fn mine_mcn_general(score: &MineScore) -> f64 {
-    let mut log_xy: f64;
-    let mut score_min: f64 = f64::MAX;
     let delta: f64 = 0.0001; // avoids overestimation of mcn
     let mic: f64 = mine_mic(score);
 
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            log_xy = ((i as f64 + 2.0) * (j as f64 + 2.0)).log2();
-            if (score.mat[i][j] + delta) >= (mic * mic) && log_xy < score_min {
-                score_min = log_xy;
-            }
-        }
-    }
-
-    score_min
+    score
+        .mat
+        .iter()
+        .enumerate()
+        .flat_map(|(i, row)| {
+            row.iter().enumerate().filter_map(move |(j, &val)| {
+                let log_xy = ((i as f64 + 2.0) * (j as f64 + 2.0)).log2();
+                if (val + delta) >= (mic * mic) {
+                    Some(log_xy)
+                } else {
+                    None
+                }
+            })
+        })
+        .fold(f64::MAX, f64::min)
 }
 
 #[pyfunction]
 pub fn mine_tic(score: &MineScore, norm: bool) -> f64 {
-    let mut tic = 0.0;
-    let mut k = 0;
-
-    for i in 0..score.n {
-        for j in 0..score.m[i] {
-            tic += score.mat[i][j];
-            k += 1;
-        }
-    }
+    let k = score.mat.iter().flatten().count() as f64;
+    let mut tic: f64 = score.mat.iter().flatten().sum();
 
     if norm {
-        tic /= k as f64;
+        tic /= k;
     }
 
     tic
