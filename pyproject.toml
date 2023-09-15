@@ -4,9 +4,8 @@ build-backend = "maturin"
 
 [project]
 name = "miners"
-version = "0.1.2"
+version = "0.1.3"
 description = "miners is a fast Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family)"
-license = "GPL v3.0"
 authors = [{ name = "0xCuteSocks"}]
 readme = "README.md"
 requires-python = ">=3.7"

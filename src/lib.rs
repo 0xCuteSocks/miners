@@ -350,22 +350,7 @@ impl MineProblem {
     pub fn new(x: Vec<f64>, y: Vec<f64>, param: &MineParameter) -> Self {
         assert_eq!(x.len(), y.len());
         let n = x.len();
-        let b = match param.alpha {
-            alpha if alpha > 0.0 && alpha <= 1.0 => f64::max((n as f64).powf(alpha), 4.0),
-            alpha if alpha >= 4.0 => f64::min(alpha, n as f64),
-            _ => panic!("invalid parameter (alpha)"),
-        };
-
-        let score_n = f64::max((b / 2.0).floor(), 2.0) as usize - 1;
-        let mut m = Vec::with_capacity(n);
-        let mut mat = Vec::with_capacity(n);
-
-        for i in 0..score_n {
-            m.push((b / (i as f64 + 2.0)).floor() as usize - 1);
-            mat.push(vec![0.0; m[i]]);
-        }
-
-        let score = MineScore { n: score_n, m, mat };
+        let score = MineScore::new(n, param);
 
         Self { n, x, y, score }
     }
@@ -392,6 +377,29 @@ pub struct MineScore {
     pub n: usize,
     pub m: Vec<usize>,
     pub mat: Vec<Vec<f64>>,
+}
+
+#[pymethods]
+impl MineScore {
+    #[new]
+    pub fn new(n: usize, param: &MineParameter) -> Self {
+        let b = match param.alpha {
+            alpha if alpha > 0.0 && alpha <= 1.0 => f64::max((n as f64).powf(alpha), 4.0),
+            alpha if alpha >= 4.0 => f64::min(alpha, n as f64),
+            _ => panic!("invalid parameter (alpha)"),
+        };
+
+        let score_n = f64::max((b / 2.0).floor(), 2.0) as usize - 1;
+        let mut m = Vec::with_capacity(n);
+        let mut mat = Vec::with_capacity(n);
+
+        for i in 0..score_n {
+            m.push((b / (i as f64 + 2.0)).floor() as usize - 1);
+            mat.push(vec![0.0; m[i]]);
+        }
+
+        MineScore { n: score_n, m, mat }
+    }
 }
 
 #[pyfunction]
@@ -564,6 +572,63 @@ pub fn mine_tic(score: &MineScore, norm: bool) -> f64 {
     tic
 }
 
+#[pyfunction]
+pub fn mine_gmic(score: &MineScore, p: f64) -> f64 {
+    // let mut c_star = score.clone();
+    // let mut score_sub = score.clone();
+
+    // c_star.mat.par_iter_mut().for_each(|x| *x = vec![0.0; c_star.n]);
+    // score_sub.m.par_iter_mut().for_each(|x| *x = 0);
+    // prepare score_sub
+    let mut score_sub = MineScore {
+        mat: score.mat.clone(),
+        n: 0,
+        m: Vec::new(),
+    };
+
+    // prepare C_star
+    let mut c_star = MineScore {
+        mat: vec![vec![0.0; score.m[0]]; score.n],
+        n: score.n,
+        m: score.m.clone(),
+    };
+
+    for i in 0..score.n {
+        for j in 0..score.m[i] {
+            let b = (i + 2) * (j + 2);
+            score_sub.n = ((b as f64 / 2.0).floor() as usize).max(2) - 1;
+            score_sub.m = (0..score_sub.n)
+                .map(|k| ((b as f64 / (k + 2) as f64).floor() as usize) - 1)
+                .collect();
+
+            c_star.mat[i][j] = mine_mic(&score_sub);
+        }
+    }
+
+    let mut z = 0;
+    
+
+    if p == 0.0 {
+        let mut gmic_temp = 1.0;
+        for i in 0..c_star.n as usize {
+            for j in 0..c_star.m[i] as usize {
+                gmic_temp *= c_star.mat[i][j];
+                z += 1;
+            }
+        }
+        gmic_temp.powf(1.0 / z as f64)
+    } else {
+        let mut gmic_temp = 0.0;
+        for i in 0..c_star.n as usize {
+            for j in 0..c_star.m[i] as usize {
+                gmic_temp += c_star.mat[i][j].powf(p);
+                z += 1;
+            }
+        }
+        (gmic_temp / z as f64).powf(1.0 / p)
+    }
+}
+
 #[pymodule]
 fn miners(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<MineParameter>()?;
@@ -575,6 +640,7 @@ fn miners(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_function(wrap_pyfunction!(mine_mev, m)?)?;
     m.add_function(wrap_pyfunction!(mine_mcn, m)?)?;
     m.add_function(wrap_pyfunction!(mine_mcn_general, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_gmic, m)?)?;
     m.add_function(wrap_pyfunction!(mine_tic, m)?)?;
 
     Ok(())
