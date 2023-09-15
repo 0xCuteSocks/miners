@@ -1,4 +1,5 @@
 use ndarray::{parallel::prelude::*, Array1, Array2};
+use pyo3::prelude::*;
 use rayon::prelude::*;
 
 pub fn argsort(data: &[f64]) -> Vec<usize> {
@@ -334,6 +335,7 @@ pub fn optimize_x_axis(
     }
 }
 
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct MineProblem {
     pub n: usize,
@@ -342,14 +344,16 @@ pub struct MineProblem {
     pub score: MineScore,
 }
 
+#[pymethods]
 impl MineProblem {
-    pub fn new(x: Vec<f64>, y: Vec<f64>, param: &MineParameter) -> Option<Self> {
+    #[new]
+    pub fn new(x: Vec<f64>, y: Vec<f64>, param: &MineParameter) -> Self {
         assert_eq!(x.len(), y.len());
         let n = x.len();
         let b = match param.alpha {
             alpha if alpha > 0.0 && alpha <= 1.0 => f64::max((n as f64).powf(alpha), 4.0),
             alpha if alpha >= 4.0 => f64::min(alpha, n as f64),
-            _ => return None,
+            _ => panic!("invalid parameter (alpha)"),
         };
 
         let score_n = f64::max((b / 2.0).floor(), 2.0) as usize - 1;
@@ -363,22 +367,26 @@ impl MineProblem {
 
         let score = MineScore { n: score_n, m, mat };
 
-        Some(Self { n, x, y, score })
+        Self { n, x, y, score }
     }
 }
 
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct MineParameter {
     pub alpha: f64,
     pub c: f64,
 }
 
+#[pymethods]
 impl MineParameter {
+    #[new]
     pub fn new(alpha: f64, c: f64) -> Self {
         Self { alpha, c }
     }
 }
 
+#[pyclass]
 #[derive(Clone, Debug)]
 pub struct MineScore {
     pub n: usize,
@@ -386,6 +394,7 @@ pub struct MineScore {
     pub mat: Vec<Vec<f64>>,
 }
 
+#[pyfunction]
 pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<MineScore> {
     let mut score = prob.score.clone();
     let q_map = Array1::zeros(prob.n);
@@ -453,6 +462,7 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
     Some(score)
 }
 
+#[pyfunction]
 pub fn mine_mic(score: &MineScore) -> f64 {
     let mut score_max = 0.0;
 
@@ -467,6 +477,7 @@ pub fn mine_mic(score: &MineScore) -> f64 {
     score_max
 }
 
+#[pyfunction]
 pub fn mine_mas(score: &MineScore) -> f64 {
     let mut score_max = 0.0;
 
@@ -482,6 +493,7 @@ pub fn mine_mas(score: &MineScore) -> f64 {
     score_max
 }
 
+#[pyfunction]
 pub fn mine_mev(score: &MineScore) -> f64 {
     let mut score_max = 0.0;
 
@@ -496,6 +508,7 @@ pub fn mine_mev(score: &MineScore) -> f64 {
     score_max
 }
 
+#[pyfunction]
 pub fn mine_mcn(score: &MineScore, eps: f64) -> f64 {
     let mut score_min = f64::MAX;
     let delta = 0.0001; // avoids overestimation of mcn
@@ -513,6 +526,7 @@ pub fn mine_mcn(score: &MineScore, eps: f64) -> f64 {
     score_min
 }
 
+#[pyfunction]
 pub fn mine_mcn_general(score: &MineScore) -> f64 {
     let mut log_xy: f64;
     let mut score_min: f64 = f64::MAX;
@@ -531,6 +545,7 @@ pub fn mine_mcn_general(score: &MineScore) -> f64 {
     score_min
 }
 
+#[pyfunction]
 pub fn mine_tic(score: &MineScore, norm: bool) -> f64 {
     let mut tic = 0.0;
     let mut k = 0;
@@ -547,4 +562,20 @@ pub fn mine_tic(score: &MineScore, norm: bool) -> f64 {
     }
 
     tic
+}
+
+#[pymodule]
+fn miners(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
+    m.add_class::<MineParameter>()?;
+    m.add_class::<MineScore>()?;
+    m.add_class::<MineProblem>()?;
+    m.add_function(wrap_pyfunction!(mine_compute_score, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_mic, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_mas, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_mev, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_mcn, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_mcn_general, m)?)?;
+    m.add_function(wrap_pyfunction!(mine_tic, m)?)?;
+
+    Ok(())
 }

@@ -28,7 +28,7 @@ fn main() {
         c: 15.0,
     };
 
-    let prob = MineProblem::new(x, y, &param).unwrap();
+    let prob = MineProblem::new(x, y, &param);
     let now = Instant::now();
     let computed_score =
         mine_compute_score(&prob.clone(), &param.clone()).expect("Failed to compute MineScore");

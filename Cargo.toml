@@ -1,9 +1,11 @@
 [package]
 name = "miners"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["0xCuteSocks"]
-description = "miners is a Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family)"
+description = "miners is a fast Rust library for the Maximal Information-based Nonparametric Exploration (MIC and MINE family)"
+license = "GPL v3.0"
+readme = "README.md"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
@@ -13,3 +15,8 @@ blas-src = { version = "0.8", features = ["openblas"] }
 openblas-src = { version = "0.10", features = ["cblas", "system"] }
 rand = "0.8"
 rayon = "1.7"
+pyo3 = { version = "0.19", features = ["extension-module"] }
+
+[lib]
+name = "miners"
+crate-type = ["cdylib", "rlib"]
