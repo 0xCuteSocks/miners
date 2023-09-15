@@ -28,19 +28,12 @@ Python:
 $ git clone https://github.com/0xCuteSocks/miners.git && cd miners
 $ maturin develop -r
 # lots of progress output as maturin runs the compilation...
-$ python
->>> import miners
->>> import numpy as np
->>> x = np.linspace(0, 100000, 100000)
->>> y = np.sin(10 * np.pi * x) + x
->>> param = miners.MineParameter(alpha=0.6, c=15)
->>> prob = miners.MineProblem(x, y, param)
->>> score = miners.mine_compute_score(prob, param)
->>> print(miners.mine_mic(score))
 ```
 ## Usage
 
-To use miners, you need to import the `miners` crate and use the `Mine` struct to compute the statistics. For example:
+To use miners, you need to import the `miners` crate and use the `mine_compute_score` function to compute the statistics. For example:
+
+Rust:
 
 ```rust
 use miners::*;
@@ -87,6 +80,18 @@ fn main() {
     print_stats(&computed_score);
 }
 
+```
+Python:
+```
+$ python
+>>> import miners
+>>> import numpy as np
+>>> x = np.linspace(0, 100000, 100000)
+>>> y = np.sin(10 * np.pi * x) + x
+>>> param = miners.MineParameter(alpha=0.6, c=15)
+>>> prob = miners.MineProblem(x, y, param)
+>>> score = miners.mine_compute_score(prob, param)
+>>> print(miners.mine_mic(score))
 ```
 
 ## Documentation
