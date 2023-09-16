@@ -10,12 +10,12 @@ readme = "README.md"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-ndarray = { version = "0.15", features = ["rayon", "blas"] }
-blas-src = { version = "0.8", features = ["openblas"] }
-openblas-src = { version = "0.10", features = ["cblas", "system"] }
-rand = "0.8"
+ndarray = { version = "0.15", features = ["rayon"] }
 rayon = "1.7"
 pyo3 = { version = "0.19", features = ["extension-module"] }
+
+[dev-dependencies]
+rand = "0.8"
 
 [lib]
 name = "miners"
