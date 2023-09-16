@@ -23,7 +23,11 @@ Rust:
 miners = { git = "https://github.com/0xCuteSocks/miners.git" }
 ```
 
-Python:
+Python: from pip
+```
+pip install miners
+```
+Python: from source
 ```
 $ git clone https://github.com/0xCuteSocks/miners.git && cd miners
 $ maturin develop -r
@@ -47,6 +51,7 @@ fn print_stats(score: &MineScore) {
     println!("MEV: {}", mine_mev(score));
     println!("MCN (eps=0): {}", mine_mcn(score, 0.0));
     println!("MCN (eps=1-MIC): {}", mine_mcn_general(score));
+    println!("GMIC: {}", mine_gmic(score, -1.0));
     println!("TIC: {}", mine_tic(score, false));
 }
 
