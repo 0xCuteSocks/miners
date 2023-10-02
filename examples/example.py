@@ -16,7 +16,7 @@ def print_stats(score):
 x = np.linspace(0, 100000, 100000)
 y = np.sin(10 * np.pi * x) + x
 t = time()
-param = miners.MineParameter(alpha=0.6, c=15)
+param = miners.MineParameter(alpha=0.6, c=15, est=miners.EST.MICe)
 prob = miners.MineProblem(x, y, param)
 score = miners.mine_compute_score(prob, param)
 end = time() - t

@@ -27,6 +27,7 @@ fn main() {
     let param = MineParameter {
         alpha: 0.6,
         c: 15.0,
+        est: EST::MICe,
     };
 
     let prob = MineProblem::new(x, y, &param);

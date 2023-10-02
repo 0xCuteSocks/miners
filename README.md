@@ -7,7 +7,7 @@ Yep, RapidMIC has a problem dealing with noisy high amounts of data
 
 ## Features
 
-- APPROX-MIC(WIP) (the original algorithm, DOI: 10.1126/science.1205438) and MIC_e (DOI: arXiv:1505.02213 and DOI: arXiv:1505.02214) estimators;
+- APPROX-MIC (the original algorithm, DOI: 10.1126/science.1205438) and MIC_e (DOI: arXiv:1505.02213 and DOI: arXiv:1505.02214) estimators;
 - Total Information Coefficient (TIC, DOI: arXiv:1505.02213) and the Generalized Mean Information Coefficient (GMIC, DOI: arXiv:1308.5712);
 - A Rust library
 - an efficient Python API
@@ -69,6 +69,7 @@ fn main() {
     let param = MineParameter {
         alpha: 0.6,
         c: 15.0,
+        est: EST::MICe
     };
 
     let prob = MineProblem::new(x, y, &param).unwrap();
@@ -93,7 +94,7 @@ $ python
 >>> import numpy as np
 >>> x = np.linspace(0, 100000, 100000)
 >>> y = np.sin(10 * np.pi * x) + x
->>> param = miners.MineParameter(alpha=0.6, c=15)
+>>> param = miners.MineParameter(alpha=0.6, c=15, est=miners.EST.MICe)
 >>> prob = miners.MineProblem(x, y, param)
 >>> score = miners.mine_compute_score(prob, param)
 >>> print(miners.mine_mic(score))
@@ -116,3 +117,6 @@ minerva and minepy: a C engine for the MINE suite and its R, Python and MATLAB w
 - (1) GitHub - minepy/minepy: minepy - Maximal Information-based Nonparametric Exploration .... https://github.com/minepy/minepy.
 
 - (2) GitHub - RapidMic is a simple, easy-to-use, rapid for computing Maximal Information-based Nonparametric Exploration .... https://github.com/HelloWorldCN/RapidMic.
+
+## contribute
+If you find bugs, welcome to open an issue or pull a request to fix it.

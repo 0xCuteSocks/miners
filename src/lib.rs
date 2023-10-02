@@ -347,17 +347,26 @@ impl MineProblem {
 }
 
 #[pyclass]
+#[derive(Default, Debug, Clone)]
+pub enum EST {
+    MICApprox,
+    #[default]
+    MICe,
+}
+
+#[pyclass]
 #[derive(Debug, Clone)]
 pub struct MineParameter {
     pub alpha: f64,
     pub c: f64,
+    pub est: EST,
 }
 
 #[pymethods]
 impl MineParameter {
     #[new]
-    pub fn new(alpha: f64, c: f64) -> Self {
-        Self { alpha, c }
+    pub fn new(alpha: f64, c: f64, est: EST) -> Self {
+        Self { alpha, c, est }
     }
 }
 
@@ -422,15 +431,22 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
 
         let (p_map, p) = get_superclumps_partition(&xx, k, &q_map).unwrap();
 
-        optimize_x_axis(
-            prob.n,
-            &q_map,
-            q,
-            &p_map,
-            p,
-            usize::min(i + 2, score.m[i] + 1),
-            row,
-        );
+        match param.est {
+            EST::MICApprox => {
+                optimize_x_axis(prob.n, &q_map, q, &p_map, p, score.m[i] + 1, row);
+            }
+            EST::MICe => {
+                optimize_x_axis(
+                    prob.n,
+                    &q_map,
+                    q,
+                    &p_map,
+                    p,
+                    usize::min(i + 2, score.m[i] + 1),
+                    row,
+                );
+            }
+        }
     });
 
     /* y vs. x */
@@ -446,15 +462,22 @@ pub fn mine_compute_score(prob: &MineProblem, param: &MineParameter) -> Option<M
 
         let (p_map, p) = get_superclumps_partition(&yy, k, &q_map).unwrap();
 
-        optimize_x_axis(
-            prob.n,
-            &q_map,
-            q,
-            &p_map,
-            p,
-            usize::min(i + 2, score.m[i] + 1),
-            row,
-        );
+        match param.est {
+            EST::MICApprox => {
+                optimize_x_axis(prob.n, &q_map, q, &p_map, p, score.m[i] + 1, row);
+            }
+            EST::MICe => {
+                optimize_x_axis(
+                    prob.n,
+                    &q_map,
+                    q,
+                    &p_map,
+                    p,
+                    usize::min(i + 2, score.m[i] + 1),
+                    row,
+                );
+            }
+        }
     });
 
     Some(score)
@@ -619,6 +642,7 @@ fn miners(_py: Python<'_>, m: &PyModule) -> PyResult<()> {
     m.add_class::<MineParameter>()?;
     m.add_class::<MineScore>()?;
     m.add_class::<MineProblem>()?;
+    m.add_class::<EST>()?;
     m.add_function(wrap_pyfunction!(mine_compute_score, m)?)?;
     m.add_function(wrap_pyfunction!(mine_mic, m)?)?;
     m.add_function(wrap_pyfunction!(mine_mas, m)?)?;
