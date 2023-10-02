@@ -119,4 +119,4 @@ minerva and minepy: a C engine for the MINE suite and its R, Python and MATLAB w
 - (2) GitHub - RapidMic is a simple, easy-to-use, rapid for computing Maximal Information-based Nonparametric Exploration .... https://github.com/HelloWorldCN/RapidMic.
 
 ## contribute
-If you find bugs, welcome to open an issue or pull a request to fix it.
+If you find any bugs, feel free to open an issue or submit a pull request to fix them.
