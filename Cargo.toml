@@ -11,7 +11,7 @@ readme = "README.md"
 
 [dependencies]
 ndarray = { version = "0.15", features = ["rayon"] }
-rayon = "1.7"
+rayon = "1.8"
 pyo3 = { version = "0.20", features = ["extension-module"] }
 
 [dev-dependencies]
